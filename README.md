@@ -86,11 +86,11 @@ python train.py --config_file configs/DukeMTMC/vit_transreid.yml MODEL.DEVICE_ID
 python train.py --config_file configs/DukeMTMC/vit_transreid_stride.yml MODEL.DEVICE_ID "('0')"
 
 # MSMT17
-python train.py --config_file configs/MSMT17/vit_transreid.yml MODEL.DEVICE_ID "('0')"
+python train.py --config_file configs/MSMT17/vit_transreid_stride.yml MODEL.DEVICE_ID "('0')"
 # OCC_Duke
-python train.py --config_file configs/OCC_Duke/vit_transreid.yml MODEL.DEVICE_ID "('0')"
+python train.py --config_file configs/OCC_Duke/vit_transreid_stride.yml MODEL.DEVICE_ID "('0')"
 # Market
-python train.py --config_file configs/Market/vit_transreid.yml MODEL.DEVICE_ID "('0')"
+python train.py --config_file configs/Market/vit_transreid_stride.yml MODEL.DEVICE_ID "('0')"
 
 ```
 
@@ -104,13 +104,13 @@ python test.py --config_file 'choose which config to test' MODEL.DEVICE_ID "('yo
 
 ```bash
 # DukeMTMC
-python test.py --config_file configs/DukeMTMC/vit_transreid.yml MODEL.DEVICE_ID "('0')"  TEST.WEIGHT '../logs/duke_vit_transreid/transformer_120.pth'
+python test.py --config_file configs/DukeMTMC/vit_transreid_stride.yml MODEL.DEVICE_ID "('0')"  TEST.WEIGHT '../logs/duke_vit_transreid/transformer_120.pth'
 # MSMT17
-python test.py --config_file configs/MSMT17/vit_transreid.yml MODEL.DEVICE_ID "('0')" TEST.WEIGHT '../logs/msmt17_vit_transreid/transformer_120.pth'
+python test.py --config_file configs/MSMT17/vit_transreid_stride.yml MODEL.DEVICE_ID "('0')" TEST.WEIGHT '../logs/msmt17_vit_transreid/transformer_120.pth'
 # OCC_Duke
-python test.py --config_file configs/OCC_Duke/vit_transreid.yml MODEL.DEVICE_ID "('0')" TEST.WEIGHT '../logs/occ_duke_vit_transreid/transformer_120.pth'
+python test.py --config_file configs/OCC_Duke/vit_transreid_stride.yml MODEL.DEVICE_ID "('0')" TEST.WEIGHT '../logs/occ_duke_vit_transreid/transformer_120.pth'
 # Market
-python test.py --config_file configs/Market/vit_transreid.yml MODEL.DEVICE_ID "('0')"  TEST.WEIGHT '../logs/market_vit_transreid/transformer_120.pth'
+python test.py --config_file configs/Market/vit_transreid_stride.yml MODEL.DEVICE_ID "('0')"  TEST.WEIGHT '../logs/market_vit_transreid/transformer_120.pth'
 
 ```
 
@@ -122,7 +122,7 @@ python test.py --config_file configs/Market/vit_transreid.yml MODEL.DEVICE_ID "(
 | :---------------: | :----------------------------------------------------------: | :----------------------------------------------------------: | :----------------------------------------------------------: | :----------------------------------------------------------: | :--: | --------- |
 |   baseline(ViT)   | [model](https://drive.google.com/file/d/1iF5JNPw9xi-rLY3Ri9EY-PFAkK6Vg_Pf/view?usp=sharing) \| [log](https://drive.google.com/file/d/1oCnLpwv-V_RU7_BNXFsIgXKxAm2QAD7n/view?usp=sharing) | [model](https://drive.google.com/file/d/1crYsKRrW4eUq6abT4KK8_atMLFsbq56W/view?usp=sharing) \| [log](https://drive.google.com/file/d/1YSo6FgJ42SOv3TTQvzE_4V1r3Ma608lZ/view?usp=sharing) | [model](https://drive.google.com/file/d/17GQqFuTleAZWLD92AtEd1c_dnTyZHl4k/view?usp=sharing) \| [log](https://drive.google.com/file/d/1a8Ci3qN4Y47LRWqgbeF4HJON1hBmeLCn/view?usp=sharing) | [model](https://drive.google.com/file/d/1uHX5j7yepalN1EINdF9lzrT3iDWj-pr9/view?usp=sharing) \| [log](https://drive.google.com/file/d/1urUfrvML_7qKvqXyz6Yl4msJS6nTNbe5/view?usp=sharing) | TBD  | TBD       |
 | TransReID^*(ViT)  | [model](https://drive.google.com/file/d/1x6Na97ycxS0t2Dn_0iRKWe1U5ccIqASK/view?usp=sharing) \| [log](https://drive.google.com/file/d/14TPDaU2T0WLTsg0iEHJFnqwzSTrpzC0B/view?usp=sharing) | [model](https://drive.google.com/file/d/11p4RjmpCGGAS-876VEt7OoFrUeHTUlyO/view?usp=sharing) \| [log](https://drive.google.com/file/d/1SWNtnhEVoDu3Uixf5XBCQlvXYapVrk7w/view?usp=sharing) | [model](https://drive.google.com/file/d/1BipxoqyThefQviJzuJIKtFJvNblIlPGN/view?usp=sharing) \| [log](https://drive.google.com/file/d/11dE_kbNWbvmo-3qUShN7qsrTsqd89Eoc/view?usp=sharing) | [model](https://drive.google.com/file/d/1VJg4rTA43TCHkR9hTIBu8S2Sy1KiTnSJ/view?usp=sharing) \| [log](https://drive.google.com/file/d/1I1xTSBl1v-QBSyxxAB7xIszW_fu9oT6g/view?usp=sharing) | TBD  | TBD       |
-| TransReID^*(DeiT) |                         model \| log                         | [model](https://drive.google.com/file/d/1cbUK2KozdPSoewzvF0ucFQnZ0yfZiu_H/view?usp=sharing) \| [log](https://drive.google.com/file/d/1C9glb0kc5thfU3U9Yrr6z7h5oYgMwHfy/view?usp=sharing) | [model](https://drive.google.com/file/d/1ltaX9zGFO31Wwwu47K9c4WTTBZVLdzLw/view?usp=sharing) \| [log](https://drive.google.com/file/d/13H9usPg7pG5b6Eglx0EiKDiU6n3chBnT/view?usp=sharing) |                         model \| log                         | TBD  | TBD       |
+| TransReID^*(DeiT) | [model](https://drive.google.com/file/d/1WSUD0gKjGIG_gzTc2izH_y-EuDzweN95/view?usp=sharing) \| [log](https://drive.google.com/file/d/1-YWh-Z1JVN8xzjG7PNyN2TpWN4Z1eUvP/view?usp=sharing) | [model](https://drive.google.com/file/d/1cbUK2KozdPSoewzvF0ucFQnZ0yfZiu_H/view?usp=sharing) \| [log](https://drive.google.com/file/d/1C9glb0kc5thfU3U9Yrr6z7h5oYgMwHfy/view?usp=sharing) | [model](https://drive.google.com/file/d/1ltaX9zGFO31Wwwu47K9c4WTTBZVLdzLw/view?usp=sharing) \| [log](https://drive.google.com/file/d/13H9usPg7pG5b6Eglx0EiKDiU6n3chBnT/view?usp=sharing) | [model](https://drive.google.com/file/d/1YJkBiMb5oVBnO6GXYW3Y_hFkR-Pl5ikC/view?usp=sharing) \| [log](https://drive.google.com/file/d/1xnPlCw3w5obBpEAaI8Sb7Z5Bh9dPcZtL/view?usp=sharing) | TBD  | TBD       |
 
 （We reorganize the code. Now we are running each experiment one by one to make sure that you can reproduce the results in our paper. We will gradually upload the logs and models after training in the following weeks. Thanks for your attention.）
 
