@@ -11,12 +11,15 @@ from .msmt17 import MSMT17
 from .sampler_ddp import RandomIdentitySampler_DDP
 import torch.distributed as dist
 from .occ_duke import OCC_DukeMTMCreID
-
+from .vehicleid import VehicleID
+from .veri import VeRi
 __factory = {
     'market1501': Market1501,
     'dukemtmc': DukeMTMCreID,
     'msmt17': MSMT17,
     'occ_duke': OCC_DukeMTMCreID,
+    'veri': VeRi,
+    'VehicleID': VehicleID,
 }
 
 def train_collate_fn(batch):

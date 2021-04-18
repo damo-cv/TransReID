@@ -54,6 +54,6 @@ TEST:
   NECK_FEAT: 'before'
   FEAT_NORM: 'yes'
 
-OUTPUT_DIR: '../logs/msmt17_vit_transreid_stride_0329'
+OUTPUT_DIR: '../logs/msmt17_vit_transreid_stride'
 
 

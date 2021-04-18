@@ -50,10 +50,10 @@ TEST:
   EVAL: True
   IMS_PER_BATCH: 256
   RE_RANKING: False
-  WEIGHT: '../logs/duke_vit_transreid_stride_0329/transformer_120.pth'
+  WEIGHT: '../logs/duke_vit_transreid_stride/transformer_120.pth'
   NECK_FEAT: 'before'
   FEAT_NORM: 'yes'
 
-OUTPUT_DIR: '../logs/duke_vit_transreid_stride_0329'
+OUTPUT_DIR: '../logs/duke_vit_transreid_stride'
 
 

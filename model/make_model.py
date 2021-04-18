@@ -9,9 +9,10 @@ def shuffle_unit(features, shift, group, begin=1):
 
     batchsize = features.size(0)
     dim = features.size(-1)
-
+    # Shift Operation
     feature_random = torch.cat([features[:, begin-1+shift:], features[:, begin:begin-1+shift]], dim=1)
     x = feature_random
+    # Patch Shuffle Operation
     try:
         x = x.view(batchsize, group, -1, dim)
     except:

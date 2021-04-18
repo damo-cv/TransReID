@@ -54,6 +54,6 @@ TEST:
   NECK_FEAT: 'before'
   FEAT_NORM: 'yes'
 
-OUTPUT_DIR: '../logs/occ_duke_vit_transreid_stride_0329_stride11'
+OUTPUT_DIR: '../logs/occ_duke_vit_transreid_stride'
 
 
