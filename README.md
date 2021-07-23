@@ -1,7 +1,7 @@
-Å![Python >=3.5](https://img.shields.io/badge/Python->=3.5-yellow.svg)
+![Python >=3.5](https://img.shields.io/badge/Python->=3.5-yellow.svg)
 ![PyTorch >=1.0](https://img.shields.io/badge/PyTorch->=1.6-blue.svg)
 
-# TransReID: Transformer-based Object Re-Identification [[arxiv]](https://arxiv.org/abs/2102.04378)
+# [ICCV2021] TransReID: Transformer-based Object Re-Identification [[arxiv]](https://arxiv.org/abs/2102.04378)
 
 The *official* repository for  [TransReID: Transformer-based Object Re-Identification](https://arxiv.org/abs/2102.04378) achieves state-of-the-art performances on object re-ID, including person re-ID and vehicle re-ID.
 
