@@ -1,7 +1,7 @@
 ![Python >=3.5](https://img.shields.io/badge/Python->=3.5-yellow.svg)
 ![PyTorch >=1.0](https://img.shields.io/badge/PyTorch->=1.6-blue.svg)
 
-# [ICCV2021] TransReID: Transformer-based Object Re-Identification [[arxiv]](https://arxiv.org/abs/2102.04378)
+# [ICCV2021] TransReID: Transformer-based Object Re-Identification [[pdf]](https://openaccess.thecvf.com/content/ICCV2021/papers/He_TransReID_Transformer-Based_Object_Re-Identification_ICCV_2021_paper.pdf)
 
 The *official* repository for  [TransReID: Transformer-based Object Re-Identification](https://arxiv.org/abs/2102.04378) achieves state-of-the-art performances on object re-ID, including person re-ID and vehicle re-ID.
 
@@ -154,11 +154,13 @@ We import veri776 viewpoint label from repo: https://github.com/Zhongdao/Vehicle
 If you find this code useful for your research, please cite our paper
 
 ```
-@article{he2021transreid,
-  title={TransReID: Transformer-based Object Re-Identification},
-  author={He, Shuting and Luo, Hao and Wang, Pichao and Wang, Fan and Li, Hao and Jiang, Wei},
-  journal={arXiv preprint arXiv:2102.04378},
-  year={2021}
+@InProceedings{He_2021_ICCV,
+    author    = {He, Shuting and Luo, Hao and Wang, Pichao and Wang, Fan and Li, Hao and Jiang, Wei},
+    title     = {TransReID: Transformer-Based Object Re-Identification},
+    booktitle = {Proceedings of the IEEE/CVF International Conference on Computer Vision (ICCV)},
+    month     = {October},
+    year      = {2021},
+    pages     = {15013-15022}
 }
 ```
 
