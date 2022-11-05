@@ -1,6 +1,6 @@
 MODEL:
   PRETRAIN_CHOICE: 'imagenet'
-  PRETRAIN_PATH: '/home/heshuting/.cache/torch/checkpoints/jx_vit_base_p16_224-80ecf9dd.pth'
+  PRETRAIN_PATH: 'D:\\TransReID\\jx_vit_base_p16_224-80ecf9dd.pth'
   METRIC_LOSS_TYPE: 'triplet'
   IF_LABELSMOOTH: 'off'
   IF_WITH_CENTER: 'no'
@@ -21,12 +21,12 @@ INPUT:
 
 DATASETS:
   NAMES: ('market1501')
-  ROOT_DIR: ('../../data')
+  ROOT_DIR: ('D:\\TransReID')
 
 DATALOADER:
   SAMPLER: 'softmax_triplet'
   NUM_INSTANCE: 4
-  NUM_WORKERS: 8
+  NUM_WORKERS: 0
 
 SOLVER:
   OPTIMIZER_NAME: 'SGD'
@@ -46,10 +46,10 @@ TEST:
   EVAL: True
   IMS_PER_BATCH: 256
   RE_RANKING: False
-  WEIGHT: '../logs/0321_market_vit_base/transformer_120.pth'
+  WEIGHT: 'D:\\TransReID\\0321_market_vit_base\\transformer_120.pth'
   NECK_FEAT: 'before'
   FEAT_NORM: 'yes'
 
-OUTPUT_DIR: '../logs/0321_market_vit_base'
+OUTPUT_DIR: 'D:\\TransReID\\0321_market_vit_base'
 
 
