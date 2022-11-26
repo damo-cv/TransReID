@@ -161,7 +161,7 @@ class Attention(nn.Module):
         x = (attn @ v).transpose(1, 2).reshape(B, N, C)
         x = self.proj(x)
         x = self.proj_drop(x)
-        return x
+        return x, attn
 
 
 class Block(nn.Module):
@@ -179,9 +179,10 @@ class Block(nn.Module):
         self.mlp = Mlp(in_features=dim, hidden_features=mlp_hidden_dim, act_layer=act_layer, drop=drop)
 
     def forward(self, x):
-        x = x + self.drop_path(self.attn(self.norm1(x)))
+        atte_output, weight = self.attn(self.norm1(x))
+        x = x + self.drop_path(atte_output)
         x = x + self.drop_path(self.mlp(self.norm2(x)))
-        return x
+        return x, weight
 
 
 class PatchEmbed(nn.Module):
@@ -287,6 +288,19 @@ class PatchEmbed_overlap(nn.Module):
         x = x.flatten(2).transpose(1, 2) # [64, 8, 768]
         return x
 
+class Part_Attention(nn.Module):
+    def __init__(self):
+        super(Part_Attention, self).__init__()
+
+    def forward(self, x):
+        length = len(x)
+        last_map = x[0]
+        for i in range(1, length):
+            last_map = torch.matmul(x[i], last_map)
+        last_map = last_map[:,:,0,1:]
+
+        _, max_inx = last_map.max(2)
+        return _, max_inx
 
 class TransReID(nn.Module):
     """ Transformer-based Object Re-Identification
@@ -351,6 +365,7 @@ class TransReID(nn.Module):
         trunc_normal_(self.pos_embed, std=.02)
 
         self.apply(self._init_weights)
+        self.part_select = Part_Attention()
 
     def _init_weights(self, m):
         if isinstance(m, nn.Linear):
@@ -391,17 +406,28 @@ class TransReID(nn.Module):
         x = self.pos_drop(x)
 
         if self.local_feature:
-            for blk in self.blocks[:-1]:
+            for blk in self.blocks:
                 x = blk(x)
             return x
 
         else:
-            for blk in self.blocks:
-                x = blk(x)
+            attn_weights = []
+            for blk in self.blocks[:-1]:
+                x, weights = blk(x)
+                attn_weights.append(weights)
+            part_num, part_inx = self.part_select(attn_weights)
+            part_inx = part_inx + 1
+            parts = []
+            B, num = part_inx.shape
+            for i in range(B):
+                parts.append(x[i, part_inx[i, :]])
+            parts = torch.stack(parts).squeeze(1)
+            concat = torch.cat((x[:, 0].unsqueeze(1), parts), dim=1)
+            last_blk = self.blocks[-1]
+            last_x, last_weights = last_blk(concat)
+            last_encoded = self.norm(last_x)
 
-            x = self.norm(x)
-
-            return x[:, 0]
+            return last_encoded[:, 0]
 
     def forward(self, x, cam_label=None, view_label=None):
         x = self.forward_features(x, cam_label, view_label)

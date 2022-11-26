@@ -150,14 +150,14 @@ class build_transformer(nn.Module):
         if cfg.MODEL.TRANSFORMER_TYPE == 'deit_small_patch16_224_TransReID':
             self.in_planes = 384
         if pretrain_choice == 'imagenet':
-            weights_dict = torch.load(model_path, map_location='cuda:0')["model"]
-            # 删除有关分类类别的权重
-            for k in list(weights_dict.keys()):
-                if "head" in k:
-                    del weights_dict[k]
-            print(self.base.load_state_dict(weights_dict, strict=False))
-            # self.base.load_param(model_path)
-            # print('Loading pretrained ImageNet model......from {}'.format(model_path))
+            # weights_dict = torch.load(model_path, map_location='cuda:0')["model"]
+            # # 删除有关分类类别的权重
+            # for k in list(weights_dict.keys()):
+            #     if "head" in k:
+            #         del weights_dict[k]
+            # print(self.base.load_state_dict(weights_dict, strict=False))
+            self.base.load_param(model_path)
+            print('Loading pretrained ImageNet model......from {}'.format(model_path))
 
         self.gap = nn.AdaptiveAvgPool2d(1)
 

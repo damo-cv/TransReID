@@ -1,12 +1,12 @@
 MODEL:
   PRETRAIN_CHOICE: 'imagenet'
-  PRETRAIN_PATH: 'D:\\TransReID\\jx_vit_base_p16_224-80ecf9dd.pth'
+  PRETRAIN_PATH: 'E:\\TransReID-main\\jx_vit_base_p16_224-80ecf9dd.pth'
   METRIC_LOSS_TYPE: 'triplet'
   IF_LABELSMOOTH: 'off'
   IF_WITH_CENTER: 'no'
   NAME: 'transformer'
   NO_MARGIN: True
-  DEVICE_ID: ('7')
+  DEVICE_ID: ('0')
   TRANSFORMER_TYPE: 'vit_base_patch16_224_TransReID'
   STRIDE_SIZE: [16, 16]
 
@@ -21,18 +21,18 @@ INPUT:
 
 DATASETS:
   NAMES: ('market1501')
-  ROOT_DIR: ('D:\\TransReID')
+  ROOT_DIR: ('E:\\TransReID-main')
 
 DATALOADER:
   SAMPLER: 'softmax_triplet'
-  NUM_INSTANCE: 4
+  NUM_INSTANCE: 1
   NUM_WORKERS: 0
 
 SOLVER:
   OPTIMIZER_NAME: 'SGD'
   MAX_EPOCHS: 120
   BASE_LR: 0.008
-  IMS_PER_BATCH: 64
+  IMS_PER_BATCH: 2
   WARMUP_METHOD: 'linear'
   LARGE_FC_LR: False
   CHECKPOINT_PERIOD: 120
@@ -46,10 +46,10 @@ TEST:
   EVAL: True
   IMS_PER_BATCH: 256
   RE_RANKING: False
-  WEIGHT: 'D:\\TransReID\\0321_market_vit_base\\transformer_120.pth'
+  WEIGHT: 'E:\\TransReID-main\\0321_market_vit_base\\transformer_120.pth'
   NECK_FEAT: 'before'
   FEAT_NORM: 'yes'
 
-OUTPUT_DIR: 'D:\\TransReID\\0321_market_vit_base'
+OUTPUT_DIR: 'E:\\TransReID-main\\0321_market_vit_base'
 
 
