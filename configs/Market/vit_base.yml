@@ -1,6 +1,6 @@
 MODEL:
   PRETRAIN_CHOICE: 'imagenet'
-  PRETRAIN_PATH: 'E:\\TransReID-main\\jx_vit_base_p16_224-80ecf9dd.pth'
+  PRETRAIN_PATH: 'E:\\reid\\swin_base_patch4_window7_224_22k.pth'
   METRIC_LOSS_TYPE: 'triplet'
   IF_LABELSMOOTH: 'off'
   IF_WITH_CENTER: 'no'

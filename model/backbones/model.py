@@ -12,7 +12,7 @@ import torch.nn.functional as F
 import torch.utils.checkpoint as checkpoint
 import numpy as np
 from typing import Optional
-
+from einops.layers.torch import Rearrange, Reduce
 
 def drop_path_f(x, drop_prob: float = 0., training: bool = False):
     """Drop paths (Stochastic Depth) per sample (when applied in main path of residual blocks).
@@ -420,6 +420,14 @@ class BasicLayer(nn.Module):
                 norm_layer=norm_layer)
             for i in range(depth)])
 
+        self.conv1_1 = nn.Conv2d(dim * 2, dim, 1, 1, 0, bias=True)
+
+        self.conv_block = nn.Sequential(
+            nn.Conv2d(dim, dim, 3, 1, 1, bias=False),
+            nn.ReLU(True),
+            nn.Conv2d(dim, dim, 3, 1, 1, bias=False)
+        )
+
         # patch merging layer
         if downsample is not None:
             self.downsample = downsample(dim=dim, norm_layer=norm_layer)
@@ -454,12 +462,30 @@ class BasicLayer(nn.Module):
 
     def forward(self, x, H, W):
         attn_mask = self.create_mask(x, H, W)  # [nW, Mh*Mw, Mh*Mw]
+        trans_x = x
+        conv_x = x
+        B, L, C = x.shape
+        conv_x = conv_x.view(B, H, W, C)
+        conv_x = Rearrange('b h w c -> b c h w')(conv_x)
+
+        x = x.view(B, H, W, C)
+        x = Rearrange('b h w c -> b c h w')(x)
         for blk in self.blocks:
             blk.H, blk.W = H, W
             if not torch.jit.is_scripting() and self.use_checkpoint:
                 x = checkpoint.checkpoint(blk, x, attn_mask)
             else:
-                x = blk(x, attn_mask)
+                trans_x = blk(trans_x, attn_mask)
+                trans_x = trans_x.view(B, H, W, C)
+                trans_x = Rearrange('b h w c -> b c h w')(trans_x)
+                conv_x = self.conv_block(conv_x) + conv_x
+                res = self.conv1_1(torch.cat((conv_x, trans_x), dim=1))
+                x = x + res
+                trans_x = Rearrange('b c h w -> b h w c')(trans_x)
+                trans_x = trans_x.view(B, H*W, C)
+
+        x = Rearrange('b c h w -> b h w c')(x)
+        x = x.view(B, H*W, C)
         if self.downsample is not None:
             x = self.downsample(x, H, W)
             H, W = (H + 1) // 2, (W + 1) // 2

@@ -1,6 +1,6 @@
 MODEL:
   PRETRAIN_CHOICE: 'imagenet'
-  PRETRAIN_PATH: 'D:\\TransReID\\swin_tiny_patch4_window7_224.pth'
+  PRETRAIN_PATH: 'E:\\reid\\swin_base_patch4_window7_224_22k.pth'
   METRIC_LOSS_TYPE: 'triplet'
   IF_LABELSMOOTH: 'off'
   IF_WITH_CENTER: 'no'
@@ -21,7 +21,7 @@ INPUT:
 
 DATASETS:
   NAMES: ('market1501')
-  ROOT_DIR: ('D:\\TransReID')
+  ROOT_DIR: ('E:\\TransReID-main')
 
 DATALOADER:
   SAMPLER: 'softmax_triplet'
@@ -32,7 +32,7 @@ SOLVER:
   OPTIMIZER_NAME: 'SGD'
   MAX_EPOCHS: 120
   BASE_LR: 0.008
-  IMS_PER_BATCH: 64
+  IMS_PER_BATCH: 16
   WARMUP_METHOD: 'linear'
   LARGE_FC_LR: False
   CHECKPOINT_PERIOD: 120
