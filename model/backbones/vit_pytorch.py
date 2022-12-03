@@ -29,7 +29,9 @@ import torch.nn as nn
 import torch.nn.functional as F
 # from torch._six import container_abcs
 import collections.abc as container_abcs
+import numpy as np
 
+from torch.nn import CrossEntropyLoss, Dropout, Softmax, Linear, Conv2d, LayerNorm, Parameter
 # From PyTorch internals
 def _ntuple(n):
     def parse(x):
@@ -198,6 +200,41 @@ class Attention(nn.Module):
         return x, attn
 
 
+class GraphConvolution(nn.Module):
+    def __init__(self, in_features, out_features, bias=False, dropout = 0.1):
+        super(GraphConvolution, self).__init__()
+        self.in_features = in_features
+        self.out_features = out_features
+        self.weight =  nn.Parameter(torch.zeros(in_features, out_features))
+        if bias:
+            self.bias = nn.Parameter(torch.zeros(out_features))
+        else:
+            self.register_parameter('bias', None)
+        self.relu = nn.LeakyReLU(0.2)
+        self.dropout = nn.Dropout(p=dropout)
+        self.reset_parameters()
+
+    def reset_parameters(self):
+        stdv = 1. / math.sqrt(self.weight.size(1))
+        self.weight.data.uniform_(-stdv, stdv)
+        if self.bias is not None:
+            self.bias.data.uniform_(-stdv, stdv)
+
+    def forward(self, input, adj):
+        weight = self.weight.float()
+        support = torch.matmul(input, weight)
+        output = torch.matmul(adj, support)
+        if self.bias is not None:
+            return self.dropout(self.relu(output + self.bias))
+        else:
+            return self.dropout(self.relu(output))
+
+    def __repr__(self):
+        return self.__class__.__name__ + ' (' \
+               + str(self.in_features) + ' -> ' \
+               + str(self.out_features) + ')'
+
+
 class Block(nn.Module):
 
     def __init__(self, dim, num_heads, mlp_ratio=4., qkv_bias=False, qk_scale=None, drop=0., attn_drop=0.,
@@ -331,10 +368,123 @@ class Part_Attention(nn.Module):
         last_map = x[0]
         for i in range(1, length):
             last_map = torch.matmul(x[i], last_map)
-        last_map = last_map[:,:,0,1:]
+        last_map = last_map[:,:,0,1:] #(2,12,128) #第一个token和其他token的相似度
 
-        _, max_inx = last_map.max(2)
-        return _, max_inx
+        max_value, max_inx = last_map.max(2)# （2， 12）在128个token种获取和第一个token最相似的
+
+        B, C = last_map.size(0), last_map.size(1)
+        patch_num = last_map.size(-1)
+
+        H = patch_num ** 0.5
+        H = int(H)
+        attention_map = last_map.view(B, C, H, H)
+        return last_map, max_inx, max_value, attention_map
+
+
+class RelativeCoordPredictor(nn.Module):
+    def __init__(self):
+        super().__init__()
+
+    def forward(self, x):
+        N, C, H, W = x.shape
+
+        mask = torch.sum(x, dim=1)
+        size = H
+
+        mask = mask.view(N, H * W)
+        thresholds = torch.mean(mask, dim=1, keepdim=True)
+        binary_mask = (mask > thresholds).float()
+        binary_mask = binary_mask.view(N, H, W)
+
+        masked_x = x * binary_mask.view(N, 1, H, W)
+        masked_x = masked_x.view(N, C, H * W).transpose(1, 2).contiguous()  # (N, S, C)
+        _, reduced_x_max_index = torch.max(torch.mean(masked_x, dim=-1), dim=-1)
+
+        basic_index = torch.from_numpy(np.array([i for i in range(N)])).cuda()
+
+        basic_label = torch.from_numpy(self.build_basic_label(size)).float()
+        # Build Label
+        label = basic_label.cuda()
+        label = label.unsqueeze(0).expand((N, H, W, 2)).view(N, H * W, 2)  # (N, S, 2)
+        basic_anchor = label[basic_index.type(torch.long), reduced_x_max_index.type(torch.long), :].unsqueeze(1)  # (N, 1, 2)
+        relative_coord = label - basic_anchor
+        relative_coord = relative_coord / size
+        relative_dist = torch.sqrt(torch.sum(relative_coord ** 2, dim=-1))  # (N, S)
+        relative_angle = torch.atan2(relative_coord[:, :, 1], relative_coord[:, :, 0])  # (N, S) in (-pi, pi)
+        relative_angle = (relative_angle / np.pi + 1) / 2  # (N, S) in (0, 1)
+
+        binary_relative_mask = binary_mask.view(N, H * W)
+        relative_dist = relative_dist * binary_relative_mask
+        relative_angle = relative_angle * binary_relative_mask
+
+        basic_anchor = basic_anchor.squeeze(1)  # (N, 2)
+
+        relative_coord_total = torch.cat((relative_dist.unsqueeze(2), relative_angle.unsqueeze(2)), dim=-1)
+
+        position_weight = torch.mean(masked_x, dim=-1)
+        position_weight = position_weight.unsqueeze(2)
+        position_weight = torch.matmul(position_weight, position_weight.transpose(1, 2))
+
+        return relative_coord_total, basic_anchor, position_weight, reduced_x_max_index
+
+    def build_basic_label(self, size):
+        basic_label = np.array([[(i, j) for j in range(size)] for i in range(size)])
+        return basic_label
+
+
+class GCN(nn.Module):
+    def __init__(self, nfeat, nhid, nclass, dropout):
+        super(GCN, self).__init__()
+
+        self.gc1 = GraphConvolution(nfeat, nhid)
+        self.gc2 = GraphConvolution(nhid, nclass)
+        self.dropout = dropout
+
+    def forward(self, x, adj):
+        x = F.relu(self.gc1(x, adj))
+        x = F.dropout(x, self.dropout)
+        x = self.gc2(x, adj)
+        return x
+
+def swish(x):
+    return x * torch.sigmoid(x)
+ACT2FN = {"gelu": torch.nn.functional.gelu, "relu": torch.nn.functional.relu, "swish": swish}
+
+class Part_Structure(nn.Module):
+    def __init__(self, config):
+        super(Part_Structure, self).__init__()
+        self.fc1 = Linear(37 * 37 * 2 + 2, 768)
+        self.act_fn = ACT2FN["relu"]
+        self.dropout = Dropout(0.1)
+        self.relative_coord_predictor = RelativeCoordPredictor()
+
+        self.struct_head = nn.Sequential(
+            nn.BatchNorm1d(37 * 37 * 2 + 2),
+            Linear(37 * 37 * 2 + 2, 768),
+        )
+
+        self.struct_head_new = nn.Sequential(
+            nn.BatchNorm1d(768 * 2),
+            Linear(768 * 2, 1024),
+            nn.BatchNorm1d(1024),
+            nn.ELU(inplace=True),
+            Linear(1024, 768),
+        )
+
+        self.gcn = GCN(2, 512, 768, dropout=0.1)
+
+    def forward(self, hidden_states, part_inx, part_value, attention_map, struc_tokens):
+        B, C, H, W = attention_map.shape
+        structure_info, basic_anchor, position_weight, reduced_x_max_index = self.relative_coord_predictor(
+            attention_map)
+        structure_info = self.gcn(structure_info, position_weight)
+
+        for i in range(B):
+            index = int(basic_anchor[i, 0] * H + basic_anchor[i, 1])
+
+            hidden_states[i, 0] = hidden_states[i, 0] + structure_info[i, index, :]
+
+        return hidden_states
 
 class TransReID(nn.Module):
     """ Transformer-based Object Re-Identification
@@ -400,6 +550,8 @@ class TransReID(nn.Module):
 
         self.apply(self._init_weights)
         self.part_select = Part_Attention()
+        self.part_norm = LayerNorm(768, eps=1e-6)
+        self.part_structure = Part_Structure(None)
 
     def _init_weights(self, m):
         if isinstance(m, nn.Linear):
@@ -446,23 +598,34 @@ class TransReID(nn.Module):
 
         else:
             attn_weights = []
-            for blk in self.blocks[:-1]:
+            hid_ori = []
+            for i, blk in enumerate(self.blocks[:-1]):
                 x, weights = blk(x, False)
                 attn_weights.append(weights)
-            part_num, part_inx = self.part_select(attn_weights)
-            part_inx = part_inx + 1
-            parts = []
-            B, num = part_inx.shape
-            for i in range(B):
-                parts.append(x[i, part_inx[i, :]])
-            parts = torch.stack(parts).squeeze(1)
-            concat = torch.cat((x[:, 0].unsqueeze(1), parts), dim=1)
-            last_blk = self.blocks[-1]
-            islast = True
-            last_x, last_weights = last_blk(concat, islast)
-            last_encoded = self.norm(last_x)
 
-            return last_encoded[:, 0]
+            last_blk = self.blocks[-1]
+            part_states, part_weights = last_blk(x, False)
+            attn_weights.append(part_weights)
+            temp_weight = []
+            temp_weight.append(part_weights)
+            _, part_inx, part_value, a_map = self.part_select(temp_weight)
+            part_states = self.part_structure(part_states, part_inx, part_value, a_map, None)
+            part_encoded = self.part_norm(part_states)
+
+            # part_num, part_inx = self.part_select(attn_weights) # index(2, 12)
+            # part_inx = part_inx + 1
+            # parts = []
+            # B, num = part_inx.shape
+            # for i in range(B):
+            #     parts.append(x[i, part_inx[i, :]])#x(2,129,768) inx里面存的是12个注意力头的第一个class token和其他128个token的最大相似的位置
+            # parts = torch.stack(parts).squeeze(1) #（2，12，768）
+            # concat = torch.cat((x[:, 0].unsqueeze(1), parts), dim=1)
+            # last_blk = self.blocks[-1]
+            # islast = True
+            # last_x, last_weights = last_blk(concat, islast)
+            # last_encoded = self.norm(last_x)
+
+            return part_encoded[:, 0]
 
     def forward(self, x, cam_label=None, view_label=None):
         x = self.forward_features(x, cam_label, view_label)

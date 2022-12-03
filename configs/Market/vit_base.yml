@@ -11,8 +11,8 @@ MODEL:
   STRIDE_SIZE: [16, 16]
 
 INPUT:
-  SIZE_TRAIN: [256, 128]
-  SIZE_TEST: [256, 128]
+  SIZE_TRAIN: [256, 256]
+  SIZE_TEST: [256, 256]
   PROB: 0.5 # random horizontal flip
   RE_PROB: 0.5 # random erasing
   PADDING: 10
