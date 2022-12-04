@@ -446,17 +446,17 @@ class TransReID(nn.Module):
 
         else:
             attn_weights = []
+            tokens = [[] for i in range(x.shape[0])]
             for blk in self.blocks[:-1]:
                 x, weights = blk(x, False)
                 attn_weights.append(weights)
-            part_num, part_inx = self.part_select(attn_weights)
-            part_inx = part_inx + 1
-            parts = []
-            B, num = part_inx.shape
-            for i in range(B):
-                parts.append(x[i, part_inx[i, :]])
-            parts = torch.stack(parts).squeeze(1)
-            concat = torch.cat((x[:, 0].unsqueeze(1), parts), dim=1)
+                temp_num, temp_inx = self.part_select(attn_weights)
+                for i in range(B):
+                    tokens[i].extend(x[i, temp_inx[i, :12]])
+
+            tokens = [torch.stack(token) for token in tokens]
+            tokens = torch.stack(tokens).squeeze(1)
+            concat = torch.cat((x[:, 0].unsqueeze(1), tokens), dim=1)
             last_blk = self.blocks[-1]
             islast = True
             last_x, last_weights = last_blk(concat, islast)
