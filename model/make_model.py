@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 
-from .backbones.model import swin_tiny_patch4_window7_224
+from .backbones.model import *
 from .backbones.resnet import ResNet, Bottleneck
 import copy
 from .backbones.vit_pytorch import vit_base_patch16_224_TransReID, vit_small_patch16_224_TransReID, deit_small_patch16_224_TransReID
@@ -396,7 +396,7 @@ __factory_T_type = {
     'deit_base_patch16_224_TransReID': vit_base_patch16_224_TransReID,
     'vit_small_patch16_224_TransReID': vit_small_patch16_224_TransReID,
     'deit_small_patch16_224_TransReID': deit_small_patch16_224_TransReID,
-    'swin': swin_tiny_patch4_window7_224
+    'swin': swin_base_patch4_window7_224_in22k
 }
 
 def make_model(cfg, num_class, camera_num, view_num):

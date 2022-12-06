@@ -638,7 +638,7 @@ def swin_base_patch4_window12_384(num_classes: int = 1000, **kwargs):
     return model
 
 
-def swin_base_patch4_window7_224_in22k(num_classes: int = 21841, **kwargs):
+def swin_base_patch4_window7_224_in22k(num_classes: int = 768, **kwargs):
     # trained ImageNet-22K
     # https://github.com/SwinTransformer/storage/releases/download/v1.0.0/swin_base_patch4_window7_224_22k.pth
     model = SwinTransformer(in_chans=3,
