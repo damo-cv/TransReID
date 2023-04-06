@@ -6,6 +6,7 @@
 The *official* repository for  [TransReID: Transformer-based Object Re-Identification](https://arxiv.org/abs/2102.04378) achieves state-of-the-art performances on object re-ID, including person re-ID and vehicle re-ID.
 
 ## News
+- 2023.3 The general human representation pre-training model. [SOLIDER](https://github.com/tinyvision/SOLIDER)
 - 2021.12 We improve TransReID via self-supervised pre-training. Please refer to [TransReID-SSL](https://github.com/michuanhaohao/TransReID-SSL)
 - 2021.3  We release the code of TransReID.
 
