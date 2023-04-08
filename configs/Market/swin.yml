@@ -1,18 +1,18 @@
 MODEL:
   PRETRAIN_CHOICE: 'imagenet'
-  PRETRAIN_PATH: 'E:\\python_prj\\jx_vit_base_p16_224-80ecf9dd.pth'
+  PRETRAIN_PATH: 'E:\\reid\\swin_base_patch4_window7_224_22k.pth'
   METRIC_LOSS_TYPE: 'triplet'
   IF_LABELSMOOTH: 'off'
   IF_WITH_CENTER: 'no'
   NAME: 'transformer'
   NO_MARGIN: True
   DEVICE_ID: ('0')
-  TRANSFORMER_TYPE: 'vit_base_patch16_224_TransReID'
+  TRANSFORMER_TYPE: 'swin'
   STRIDE_SIZE: [16, 16]
 
 INPUT:
-  SIZE_TRAIN: [256, 256]
-  SIZE_TEST: [256, 256]
+  SIZE_TRAIN: [256, 128]
+  SIZE_TEST: [256, 128]
   PROB: 0.5 # random horizontal flip
   RE_PROB: 0.5 # random erasing
   PADDING: 10
@@ -21,18 +21,18 @@ INPUT:
 
 DATASETS:
   NAMES: ('market1501')
-  ROOT_DIR: ('E:\\python_prj')
+  ROOT_DIR: ('E:\\TransReID-main')
 
 DATALOADER:
   SAMPLER: 'softmax_triplet'
-  NUM_INSTANCE: 1
+  NUM_INSTANCE: 4
   NUM_WORKERS: 0
 
 SOLVER:
   OPTIMIZER_NAME: 'SGD'
   MAX_EPOCHS: 120
   BASE_LR: 0.008
-  IMS_PER_BATCH: 2
+  IMS_PER_BATCH: 16
   WARMUP_METHOD: 'linear'
   LARGE_FC_LR: False
   CHECKPOINT_PERIOD: 120
@@ -46,10 +46,10 @@ TEST:
   EVAL: True
   IMS_PER_BATCH: 256
   RE_RANKING: False
-  WEIGHT: 'E:\\python_prj\\log\\transformer_120.pth'
+  WEIGHT: 'D:\\TransReID\\0321_market_vit_base\\transformer_120.pth'
   NECK_FEAT: 'before'
   FEAT_NORM: 'yes'
 
-OUTPUT_DIR: 'E:\\python_prj\\log'
+OUTPUT_DIR: 'D:\\TransReID\\0321_market_vit_base'
 
 
