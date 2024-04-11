@@ -1,0 +1,1 @@
+nohup python -u train.py --config_file configs/DukeMTMC/vit_base.yml MODEL.DEVICE_ID "('0')" > train_duke.log 2>&1 &

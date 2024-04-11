@@ -1,6 +1,6 @@
 MODEL:
   PRETRAIN_CHOICE: 'imagenet'
-  PRETRAIN_PATH: '/home/heshuting/.cache/torch/checkpoints/jx_vit_base_p16_224-80ecf9dd.pth'
+  PRETRAIN_PATH: '/home/zhengwei/Desktop/Zhengwei/Projects/TransReID/pretrained/jx_vit_base_p16_224-80ecf9dd.pth'
   METRIC_LOSS_TYPE: 'triplet'
   IF_LABELSMOOTH: 'off'
   IF_WITH_CENTER: 'no'
@@ -21,7 +21,7 @@ INPUT:
 
 DATASETS:
   NAMES: ('dukemtmc')
-  ROOT_DIR: ('../../data')
+  ROOT_DIR: ('/home/zhengwei/Desktop/Zhengwei/Projects/datasets')
 
 DATALOADER:
   SAMPLER: 'softmax_triplet'
@@ -50,6 +50,6 @@ TEST:
   NECK_FEAT: 'before'
   FEAT_NORM: 'yes'
 
-OUTPUT_DIR: '../logs/duke_vit_base'
+OUTPUT_DIR: './logs/duke_vit_base'
 
 

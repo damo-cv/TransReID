@@ -220,3 +220,4 @@ ENV/
 # Rope project settings
 .ropeproject
 
+pretrained/jx_vit_base_p16_224-80ecf9dd.pth
