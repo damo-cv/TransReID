@@ -7,20 +7,51 @@ from loss.metric_learning import Arcface, Cosface, AMSoftmax, CircleLoss
 
 def shuffle_unit(features, shift, group, begin=1):
 
-    batchsize = features.size(0)
-    dim = features.size(-1)
+    # HIT - assume feature is like
+    # features = torch.tensor([[
+    #     [1, 2, 3], [4, 5, 6], [7, 8, 9], [10, 11, 12],
+    #     [13, 14, 15], [16, 17, 18], [19, 20, 21], [22, 23, 24]
+    # ]])
+    # shape - [1, 8, 3]
+
+    batchsize = features.size(0) #1
+    dim = features.size(-1)      #3
     # Shift Operation
     feature_random = torch.cat([features[:, begin-1+shift:], features[:, begin:begin-1+shift]], dim=1)
+    # features[:, begin-1+shift:] -> [[[7, 8, 9], [10, 11, 12], [13, 14, 15], [16, 17, 18], [19, 20, 21], [22, 23, 24]]]
+    # features[:, :shift] -> [[[1, 2, 3], [4, 5, 6]]]
+    # feature_random = [[7, 8, 9], [10, 11, 12], [13, 14, 15], [16, 17, 18], [19, 20, 21], [22, 23, 24], [1, 2, 3], [4, 5, 6]]
     x = feature_random
     # Patch Shuffle Operation
     try:
+        # reshape for grouping!
         x = x.view(batchsize, group, -1, dim)
+        # reshape feature_random to [1, 2, 4, 3]
+        # x = torch.tensor([[
+        #     [[7, 8, 9], [10, 11, 12], [13, 14, 15], [16, 17, 18]],
+        #     [[19, 20, 21], [22, 23, 24], [1, 2, 3], [4, 5, 6]]
+        # ]])
+
     except:
         x = torch.cat([x, x[:, -2:-1, :]], dim=1)
         x = x.view(batchsize, group, -1, dim)
 
+    # permute to [1, 4, 2, 3]
     x = torch.transpose(x, 1, 2).contiguous()
+    #     x = torch.tensor([[
+    #     [[7, 8, 9], [19, 20, 21]],
+    #     [[10, 11, 12], [22, 23, 24]],
+    #     [[13, 14, 15], [1, 2, 3]],
+    #     [[16, 17, 18], [4, 5, 6]]
+    # ]])
+
+    # flatten back to shape [1, 8, 3]
     x = x.view(batchsize, -1, dim)
+    #     x = torch.tensor([[
+    #     [7, 8, 9], [19, 20, 21], [10, 11, 12], [22, 23, 24],
+    #     [13, 14, 15], [1, 2, 3], [16, 17, 18], [4, 5, 6]
+    # ]])
+
 
     return x
 
@@ -234,12 +265,14 @@ class build_transformer_local(nn.Module):
         else:
             view_num = 0
 
+        # HIT - load transReID model from the factory dictionary
         self.base = factory[cfg.MODEL.TRANSFORMER_TYPE](img_size=cfg.INPUT.SIZE_TRAIN, sie_xishu=cfg.MODEL.SIE_COE, local_feature=cfg.MODEL.JPM, camera=camera_num, view=view_num, stride_size=cfg.MODEL.STRIDE_SIZE, drop_path_rate=cfg.MODEL.DROP_PATH)
 
         if pretrain_choice == 'imagenet':
             self.base.load_param(model_path)
             print('Loading pretrained ImageNet model......from {}'.format(model_path))
 
+        # HIT - get last block layer for global context feature!
         block = self.base.blocks[-1]
         layer_norm = self.base.norm
         self.b1 = nn.Sequential(
@@ -307,8 +340,10 @@ class build_transformer_local(nn.Module):
 
     def forward(self, x, label=None, cam_label= None, view_label=None):  # label is unused if self.cos_layer == 'no'
 
+        # HIT - output from the base model TransReID
         features = self.base(x, cam_label=cam_label, view_label=view_label)
 
+        # HIT - get global features
         # global branch
         b1_feat = self.b1(features) # [64, 129, 768]
         global_feat = b1_feat[:, 0]
@@ -321,29 +356,33 @@ class build_transformer_local(nn.Module):
         if self.rearrange:
             x = shuffle_unit(features, self.shift_num, self.shuffle_groups)
         else:
+            # HIT - use patch without class token
             x = features[:, 1:]
-        # lf_1
+
+        # HIT - get segment based features. 
+        # lf_1 - segment 1
         b1_local_feat = x[:, :patch_length]
         b1_local_feat = self.b2(torch.cat((token, b1_local_feat), dim=1))
         local_feat_1 = b1_local_feat[:, 0]
 
-        # lf_2
+        # lf_2 - segment 2
         b2_local_feat = x[:, patch_length:patch_length*2]
         b2_local_feat = self.b2(torch.cat((token, b2_local_feat), dim=1))
         local_feat_2 = b2_local_feat[:, 0]
 
-        # lf_3
+        # lf_3 - segment 3
         b3_local_feat = x[:, patch_length*2:patch_length*3]
         b3_local_feat = self.b2(torch.cat((token, b3_local_feat), dim=1))
         local_feat_3 = b3_local_feat[:, 0]
 
-        # lf_4
+        # lf_4 - segment 4
         b4_local_feat = x[:, patch_length*3:patch_length*4]
         b4_local_feat = self.b2(torch.cat((token, b4_local_feat), dim=1))
         local_feat_4 = b4_local_feat[:, 0]
 
         feat = self.bottleneck(global_feat)
 
+        # get the batch normaized features!
         local_feat_1_bn = self.bottleneck_1(local_feat_1)
         local_feat_2_bn = self.bottleneck_2(local_feat_2)
         local_feat_3_bn = self.bottleneck_3(local_feat_3)
@@ -354,6 +393,7 @@ class build_transformer_local(nn.Module):
                 cls_score = self.classifier(feat, label)
             else:
                 cls_score = self.classifier(feat)
+                # HIT - Classification scores for the local features
                 cls_score_1 = self.classifier_1(local_feat_1_bn)
                 cls_score_2 = self.classifier_2(local_feat_2_bn)
                 cls_score_3 = self.classifier_3(local_feat_3_bn)
@@ -364,6 +404,7 @@ class build_transformer_local(nn.Module):
                             local_feat_4]  # global feature for triplet loss
         else:
             if self.neck_feat == 'after':
+                # HIT- scaled down by 4. not sure why?
                 return torch.cat(
                     [feat, local_feat_1_bn / 4, local_feat_2_bn / 4, local_feat_3_bn / 4, local_feat_4_bn / 4], dim=1)
             else:
@@ -383,6 +424,7 @@ class build_transformer_local(nn.Module):
         print('Loading pretrained model for finetuning from {}'.format(model_path))
 
 
+# HIT - initialize the TransREID model
 __factory_T_type = {
     'vit_base_patch16_224_TransReID': vit_base_patch16_224_TransReID,
     'deit_base_patch16_224_TransReID': vit_base_patch16_224_TransReID,

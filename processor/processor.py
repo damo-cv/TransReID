@@ -28,51 +28,70 @@ def do_train(cfg,
     logger = logging.getLogger("transreid.train")
     logger.info('start training')
     _LOCAL_PROCESS_GROUP = None
+
+    # HIT - setup and check cuda for multi gpu training
     if device:
         model.to(local_rank)
         if torch.cuda.device_count() > 1 and cfg.MODEL.DIST_TRAIN:
             print('Using {} GPUs for training'.format(torch.cuda.device_count()))
             model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[local_rank], find_unused_parameters=True)
 
+    # HIT - to track loss and accuracy
     loss_meter = AverageMeter()
     acc_meter = AverageMeter()
 
     evaluator = R1_mAP_eval(num_query, max_rank=50, feat_norm=cfg.TEST.FEAT_NORM)
+
+    # HIT - For mixed-precision training, during training and inference its helpful
     scaler = amp.GradScaler()
     # train
+    # HIT - Iterates through epochs
     for epoch in range(1, epochs + 1):
         start_time = time.time()
+        # HIT - Resets the tracking meters at the beginning of each epoch
         loss_meter.reset()
         acc_meter.reset()
         evaluator.reset()
         scheduler.step(epoch)
+        # HIT - Sets the model to training mode
         model.train()
+        # HIT - Iterates through batches in the training dataset
         for n_iter, (img, vid, target_cam, target_view) in enumerate(train_loader):
+            # HIT - Clears previous gradients
             optimizer.zero_grad()
             optimizer_center.zero_grad()
             img = img.to(device)
             target = vid.to(device)
             target_cam = target_cam.to(device)
             target_view = target_view.to(device)
+            # HIT - Computes predictions and loss
             with amp.autocast(enabled=True):
                 score, feat = model(img, target, cam_label=target_cam, view_label=target_view )
                 loss = loss_fn(score, feat, target, target_cam)
 
+            # HIT - Computes gradients and updates the model weights using the optimizer
             scaler.scale(loss).backward()
 
             scaler.step(optimizer)
             scaler.update()
 
+            # HIT - if center loss is used as a loss function 
+            # it ensures features of samples from the same class are close to their corresponding class centers in the feature space
+            # needs special type of handling during training
             if 'center' in cfg.MODEL.METRIC_LOSS_TYPE:
+                # HIT - scaling such that the center loss does not dominate the overall loss during optimization
                 for param in center_criterion.parameters():
                     param.grad.data *= (1. / cfg.SOLVER.CENTER_LOSS_WEIGHT)
                 scaler.step(optimizer_center)
                 scaler.update()
+
+            # HIT - Computes accuracy for the batch
             if isinstance(score, list):
                 acc = (score[0].max(1)[1] == target).float().mean()
             else:
                 acc = (score.max(1)[1] == target).float().mean()
 
+            # HIT - update in the meter
             loss_meter.update(loss.item(), img.shape[0])
             acc_meter.update(acc, 1)
 
@@ -90,6 +109,8 @@ def do_train(cfg,
             logger.info("Epoch {} done. Time per batch: {:.3f}[s] Speed: {:.1f}[samples/s]"
                     .format(epoch, time_per_batch, train_loader.batch_size / time_per_batch))
 
+
+        # HIT - below all about creating checkpoints and results!
         if epoch % checkpoint_period == 0:
             if cfg.MODEL.DIST_TRAIN:
                 if dist.get_rank() == 0:

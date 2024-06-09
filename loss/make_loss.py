@@ -36,7 +36,7 @@ def make_loss(cfg, num_classes):    # modified by gu
     elif cfg.DATALOADER.SAMPLER == 'softmax_triplet':
         def loss_func(score, feat, target, target_cam):
             if cfg.MODEL.METRIC_LOSS_TYPE == 'triplet':
-                if cfg.MODEL.IF_LABELSMOOTH == 'on':
+                if cfg.MODEL.IF_LABELSMOOTH == 'on':   
                     if isinstance(score, list):
                         ID_LOSS = [xent(scor, target) for scor in score[1:]]
                         ID_LOSS = sum(ID_LOSS) / len(ID_LOSS)

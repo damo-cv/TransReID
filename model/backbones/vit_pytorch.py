@@ -259,19 +259,25 @@ class PatchEmbed_overlap(nn.Module):
         self.num_x = (img_size[1] - patch_size[1]) // stride_size_tuple[1] + 1
         self.num_y = (img_size[0] - patch_size[0]) // stride_size_tuple[0] + 1
         print('using stride: {}, and patch number is num_y{} * num_x{}'.format(stride_size, self.num_y, self.num_x))
-        num_patches = self.num_x * self.num_y
+        num_patches = self.num_x * self.num_y 
         self.img_size = img_size
-        self.patch_size = patch_size
-        self.num_patches = num_patches
+        self.patch_size = patch_size 
+        self.num_patches = num_patches # HIT - being used outside in TransReID
 
+        # HIT - Stride = Patch Size: No overlap
+        # HIT - Stride < Patch Size: Overlap between patches
+        # HIT - Example: For a 224x224 image with 16x16 patches, stride = 8 (50% overlap) results in 27x27 patches.
         self.proj = nn.Conv2d(in_chans, embed_dim, kernel_size=patch_size, stride=stride_size)
         for m in self.modules():
+            # HIT - Initialize weights using a normal distribution
             if isinstance(m, nn.Conv2d):
                 n = m.kernel_size[0] * m.kernel_size[1] * m.out_channels
                 m.weight.data.normal_(0, math.sqrt(2. / n))
+            # HIT - Initialize weights and biases for batch normalization layers
             elif isinstance(m, nn.BatchNorm2d):
                 m.weight.data.fill_(1)
                 m.bias.data.zero_()
+            # HIT - Similar to batch normalization but applied per-instance
             elif isinstance(m, nn.InstanceNorm2d):
                 m.weight.data.fill_(1)
                 m.bias.data.zero_()
@@ -279,6 +285,7 @@ class PatchEmbed_overlap(nn.Module):
     def forward(self, x):
         B, C, H, W = x.shape
 
+        # HIT - patch assumed size if different from provided image size
         # FIXME look at relaxing size constraints
         assert H == self.img_size[0] and W == self.img_size[1], \
             f"Input image size ({H}*{W}) doesn't match model ({self.img_size[0]}*{self.img_size[1]})."
@@ -308,14 +315,17 @@ class TransReID(nn.Module):
 
         num_patches = self.patch_embed.num_patches
 
+        # HIT - initialize the cls token and pos embedding
         self.cls_token = nn.Parameter(torch.zeros(1, 1, embed_dim))
         self.pos_embed = nn.Parameter(torch.zeros(1, num_patches + 1, embed_dim))
         self.cam_num = camera
         self.view_num = view
+        # HIT - A coefficient used for scaling the SIE embeddings
         self.sie_xishu = sie_xishu
-        # Initialize SIE Embedding
+        # HIT - Initialize SIE embeddings based on the number of cameras and viewpoints
         if camera > 1 and view > 1:
             self.sie_embed = nn.Parameter(torch.zeros(camera * view, 1, embed_dim))
+            # HIT - Initializes the SIE embeddings with a truncated normal distribution
             trunc_normal_(self.sie_embed, std=.02)
             print('camera number is : {} and viewpoint number is : {}'.format(camera, view))
             print('using SIE_Lambda is : {}'.format(sie_xishu))
@@ -337,6 +347,7 @@ class TransReID(nn.Module):
         self.pos_drop = nn.Dropout(p=drop_rate)
         dpr = [x.item() for x in torch.linspace(0, drop_path_rate, depth)]  # stochastic depth decay rule
 
+        # HIT - stacking of transformer blocks
         self.blocks = nn.ModuleList([
             Block(
                 dim=embed_dim, num_heads=num_heads, mlp_ratio=mlp_ratio, qkv_bias=qkv_bias, qk_scale=qk_scale,
@@ -373,12 +384,16 @@ class TransReID(nn.Module):
         self.fc = nn.Linear(self.embed_dim, num_classes) if num_classes > 0 else nn.Identity()
 
     def forward_features(self, x, camera_id, view_id):
+        # HIT - convert image into a sequence of patch embeddings
         B = x.shape[0]
         x = self.patch_embed(x)
 
+        # HIT - expanded to match the batch size
         cls_tokens = self.cls_token.expand(B, -1, -1)  # stole cls_tokens impl from Phil Wang, thanks
+        # HIT - [cls_token, patch_1, patch_2, ..., patch_n]
         x = torch.cat((cls_tokens, x), dim=1)
 
+        # HIT - To incorporate additional context (camera and view) into the embeddings
         if self.cam_num > 0 and self.view_num > 0:
             x = x + self.pos_embed + self.sie_xishu * self.sie_embed[camera_id * self.view_num + view_id]
         elif self.cam_num > 0:
@@ -388,14 +403,23 @@ class TransReID(nn.Module):
         else:
             x = x + self.pos_embed
 
+        # HIT - dropout
         x = self.pos_drop(x)
 
         if self.local_feature:
+            # HIT - For tasks requiring local feature context, 
+            # except last block, all the blocks are considered
             for blk in self.blocks[:-1]:
                 x = blk(x)
+
+            # HIT - raw, unnormalized features might be more useful in scenarios where local detail is crucial
+            # Applying normalization here might alter the detailed local features that are desired for specific tasks
+            # thats why no normalization is applied unlike for global context
             return x
 
         else:
+            # HIT - For tasks requiring global context, 
+            # the entire sequence of blocks is processed to leverage the final
             for blk in self.blocks:
                 x = blk(x)
 
