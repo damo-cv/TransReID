@@ -27,8 +27,7 @@ from itertools import repeat
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torch._six import container_abcs
-
+import collections.abc as container_abcs
 
 # From PyTorch internals
 def _ntuple(n):

@@ -1,6 +1,6 @@
 MODEL:
   PRETRAIN_CHOICE: 'imagenet'
-  PRETRAIN_PATH: '/home/xxx/.cache/torch/checkpoints/jx_vit_base_p16_224-80ecf9dd.pth'
+  PRETRAIN_PATH: '/home/hedwig/Downloads/jx_vit_base_p16_224-80ecf9dd.pth'
   METRIC_LOSS_TYPE: 'triplet'
   IF_LABELSMOOTH: 'off'
   IF_WITH_CENTER: 'no'
@@ -32,7 +32,7 @@ DATALOADER:
 
 SOLVER:
   OPTIMIZER_NAME: 'SGD'
-  MAX_EPOCHS: 120
+  MAX_EPOCHS: 1
   BASE_LR: 0.008
   IMS_PER_BATCH: 64
   WARMUP_METHOD: 'linear'
@@ -53,5 +53,6 @@ TEST:
   FEAT_NORM: 'yes'
 
 OUTPUT_DIR: '../logs/0321_market_vit_jpm'
+DEBUG : True
 
 

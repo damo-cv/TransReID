@@ -51,5 +51,5 @@ TEST:
   FEAT_NORM: 'yes'
 
 OUTPUT_DIR: '../logs/duke_vit_base'
-
+DEBUG : True
 

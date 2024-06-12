@@ -22,6 +22,7 @@ __factory = {
     'VehicleID': VehicleID,
 }
 
+# HIT - Stacks the images into a single tensor to create a batch
 def train_collate_fn(batch):
     """
     # collate_fn这个函数的输入就是一个list，list的长度是一个batch size，list中的每个元素都是__getitem__得到的结果
@@ -58,13 +59,35 @@ def make_dataloader(cfg):
 
     num_workers = cfg.DATALOADER.NUM_WORKERS
 
+    # check this : datasets/market1501.py
+    # below calling market1501 class
     dataset = __factory[cfg.DATASETS.NAMES](root=cfg.DATASETS.ROOT_DIR)
 
+    # HIT - create training dataset
     train_set = ImageDataset(dataset.train, train_transforms)
     train_set_normal = ImageDataset(dataset.train, val_transforms)
     num_classes = dataset.num_train_pids
     cam_num = dataset.num_train_cams
     view_num = dataset.num_train_vids
+
+    # HIT -
+    # => Market1501 loaded
+    # Dataset statistics:
+    #   ----------------------------------------
+    #   subset   | # ids | # images | # cameras
+    #   ----------------------------------------
+    #   train    |   751 |    12936 |         6
+    #   query    |   750 |     3368 |         6
+    #   gallery  |   751 |    15913 |         6
+    #   ----------------------------------------
+    # Number of classes: 751
+    # Cam num: 6
+    # View num: 1
+
+    print("Number of classes: %d" % num_classes)
+    print("Cam num: %d" % cam_num)
+    print("View num: %d" % view_num)
+
 
     if 'triplet' in cfg.DATALOADER.SAMPLER:
         if cfg.MODEL.DIST_TRAIN:
@@ -104,4 +127,5 @@ def make_dataloader(cfg):
         train_set_normal, batch_size=cfg.TEST.IMS_PER_BATCH, shuffle=False, num_workers=num_workers,
         collate_fn=val_collate_fn
     )
+
     return train_loader, train_loader_normal, val_loader, len(dataset.query), num_classes, cam_num, view_num

@@ -27,15 +27,19 @@ class Market1501(BaseImageDataset):
 
     def __init__(self, root='', verbose=True, pid_begin = 0, **kwargs):
         super(Market1501, self).__init__()
-        self.dataset_dir = osp.join(root, self.dataset_dir)
+        self.dataset_dir = "/home/hedwig/Downloads/Market-1501-v15.09.15"
         self.train_dir = osp.join(self.dataset_dir, 'bounding_box_train')
         self.query_dir = osp.join(self.dataset_dir, 'query')
         self.gallery_dir = osp.join(self.dataset_dir, 'bounding_box_test')
 
         self._check_before_run()
         self.pid_begin = pid_begin
+        # below returns a dataset list of (img_path, pid, camid, trackedID(which is one always))
+        # HIT - Used for training the re-ID model
         train = self._process_dir(self.train_dir, relabel=True)
+        # HIT - Used for querying the model during evaluation
         query = self._process_dir(self.query_dir, relabel=False)
+        # HIT - Acts as the reference database for evaluation during the querying process
         gallery = self._process_dir(self.gallery_dir, relabel=False)
 
         if verbose:
@@ -62,6 +66,20 @@ class Market1501(BaseImageDataset):
             raise RuntimeError("'{}' is not available".format(self.gallery_dir))
 
     def _process_dir(self, dir_path, relabel=False):
+        """
+        The `_process_dir` function processes a directory of image files, extracts person IDs and camera IDs
+        from the file names, and optionally relabels the person IDs based on a mapping.
+        
+        :param dir_path: The `dir_path` parameter in the `_process_dir` method is the path to the directory
+        containing the image files that need to be processed. It is a string representing the directory path
+        where the images are located
+        :param relabel: The `relabel` parameter in the `_process_dir` function is a boolean flag that
+        indicates whether to relabel the person IDs in the dataset. If `relabel` is set to `True`, the
+        function will assign new labels to the person IDs based on their occurrence in the dataset. This,
+        defaults to False (optional)
+        :return: A list of tuples representing image data, where each tuple contains the image path, person
+        ID, camera ID, and a constant value of 1.
+        """
         img_paths = glob.glob(osp.join(dir_path, '*.jpg'))
         pattern = re.compile(r'([-\d]+)_c(\d)')
 

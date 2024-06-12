@@ -22,6 +22,10 @@ def set_seed(seed):
     torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = True
 
+
+# ACCORDING TO THE COMMAND -
+# python train.py --config_file configs/Market/vit_jpm.yml MODEL.DEVICE_ID "('0')" 
+# below runs
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description="ReID Baseline Training")
@@ -32,8 +36,13 @@ if __name__ == '__main__':
     parser.add_argument("opts", help="Modify config options using the command-line", default=None,
                         nargs=argparse.REMAINDER)
     parser.add_argument("--local_rank", default=0, type=int)
+    parser.add_argument("--dummy_debug", default=False, type=bool)
     args = parser.parse_args()
 
+    print("dummy_debug " , args.dummy_debug)
+    DEBUG = args.dummy_debug
+
+    # exit(0)
     if args.config_file != "":
         cfg.merge_from_file(args.config_file)
     cfg.merge_from_list(args.opts)
@@ -64,6 +73,7 @@ if __name__ == '__main__':
 
     os.environ['CUDA_VISIBLE_DEVICES'] = cfg.MODEL.DEVICE_ID
     # HIT - simple to understand!
+    print("Create dataloader...")
     train_loader, train_loader_normal, val_loader, num_query, num_classes, camera_num, view_num = make_dataloader(cfg)
 
     # HIT - documented this!
@@ -71,6 +81,8 @@ if __name__ == '__main__':
 
     # HIT - simple to understand
     loss_func, center_criterion = make_loss(cfg, num_classes=num_classes)
+    exit(0)
+
 
     # HIT - simple to understand
     optimizer, optimizer_center = make_optimizer(cfg, model, center_criterion)
